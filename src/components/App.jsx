@@ -18,19 +18,12 @@ class App extends Component {
   };
 
   async componentDidUpdate(_, prevState) {
-    const {
-      state: { searchString },
-      updateGallery,
-    } = this;
+    const searchString = this.state.searchString;
+    const updateGallery = this.updateGallery;
 
     if (prevState.searchString !== searchString) {
-      requestParameters.page = 1;
-      this.setState({ gallery: [] });
-
-      if (searchString !== '') {
-        this.setState({ isLoading: true });
-        updateGallery(this.state.searchString);
-      }
+      this.setState({ isLoading: true });
+      updateGallery(this.state.searchString);
     }
   }
 
@@ -56,13 +49,17 @@ class App extends Component {
     }
   };
 
-  getSearchString = value => {
-    if (this.state.searchString !== value.searchString) {
-      this.setState({ searchString: value.searchString });
-    } else {
-      alert(`You are actually looking at "${value.searchString}" pictures`);
-    }
-  };
+  getSearchString = (value) => {
+  if (this.state.searchString !== value.searchString) {
+    this.setState({
+      searchString: value.searchString,
+      gallery: [],
+      page: 1,
+    });
+  } else {
+    alert(`You are actually looking at "${value.searchString}" pictures`);
+  }
+};
 
   openModal = ({ largeImageURL, tags }) => {
     this.setState({ isModalOpen: true });
@@ -76,13 +73,8 @@ class App extends Component {
   };
 
   render() {
-    const {
-      state: { gallery, isLoading, isModalOpen, largeImageURL, tags },
-      getSearchString,
-      loadNextPage,
-      openModal,
-      closeModal,
-    } = this;
+    const { gallery, isLoading, isModalOpen, largeImageURL, tags } = this.state;
+    const { getSearchString, loadNextPage, openModal, closeModal } = this;
 
     console.log(isLoading); //
 
