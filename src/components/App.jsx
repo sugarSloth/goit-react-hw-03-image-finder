@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { getApiResponse, requestParameters } from 'pixabayApi/pixabay-api';
+import { getApiResponse } from 'pixabayApi/pixabay-api';
 import Searchbar from './Searchbar';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
@@ -15,33 +15,43 @@ class App extends Component {
     isLoading: false,
     error: null,
     isModalOpen: false,
+    currentPage: 1,
+    totalPages: 1,
   };
 
   async componentDidUpdate(_, prevState) {
     const searchString = this.state.searchString;
-    const updateGallery = this.updateGallery;
+    const { currentPage } = this.state;
 
-    if (prevState.searchString !== searchString) {
+    if (prevState.searchString !== searchString || prevState.currentPage !== currentPage) {
       this.setState({ isLoading: true });
-      updateGallery(this.state.searchString);
+      this.updateGallery(searchString, currentPage);
     }
   }
 
   loadNextPage = () => {
-    this.setState({ isLoading: true });
-    this.updateGallery(this.state.searchString);
+    const nextPage = this.state.currentPage + 1;
+
+    if (nextPage <= this.state.totalPages) {
+      this.setState({ currentPage: nextPage }, () => {
+        this.updateGallery(this.state.searchString, nextPage);
+      });
+    }
   };
 
-  updateGallery = searchString => {
+  updateGallery = async (searchString, page) => {
     try {
-      getApiResponse(searchString).then(response => {
-        if (response.totalHits === 0) {
-          alert(`Images by your request "${searchString}" did not found`);
-          return;
-        } else {
-          this.setState({ gallery: [...this.state.gallery, ...response.hits] });
-        }
-      });
+      const response = await getApiResponse(searchString, page);
+
+      if (response.totalHits === 0) {
+        alert(`Images by your request "${searchString}" did not found`);
+        return;
+      }
+
+      this.setState((prevState) => ({
+        gallery: [...prevState.gallery, ...response.hits],
+        totalPages: Math.ceil(response.totalHits / response.hitsPerPage),
+      }));
     } catch (error) {
       this.setState({ error });
     } finally {
@@ -50,51 +60,54 @@ class App extends Component {
   };
 
   getSearchString = (value) => {
-  if (this.state.searchString !== value.searchString) {
-    this.setState({
-      searchString: value.searchString,
-      gallery: [],
-      page: 1,
-    });
-  } else {
-    alert(`You are actually looking at "${value.searchString}" pictures`);
-  }
-};
+    if (this.state.searchString !== value.searchString) {
+      this.setState(
+        {
+          searchString: value.searchString,
+          gallery: [],
+        },
+        () => {
+          this.updateGallery(value.searchString, 1);
+        }
+      );
+    } else {
+      alert(`You are actually looking at "${value.searchString}" pictures`);
+    }
+  };
 
   openModal = ({ largeImageURL, tags }) => {
-    this.setState({ isModalOpen: true });
-    this.setState({ largeImageURL, tags });
+    this.setState({ isModalOpen: true, largeImageURL, tags });
   };
 
   closeModal = () => {
-    this.setState({ isModalOpen: false });
-    delete this.state.largeImageURL;
-    delete this.state.tags;
+    this.setState({ isModalOpen: false, largeImageURL: null, tags: null });
   };
 
   render() {
-    const { gallery, isLoading, isModalOpen, largeImageURL, tags } = this.state;
-    const { getSearchString, loadNextPage, openModal, closeModal } = this;
-
-    console.log(isLoading); //
+    const { gallery, isLoading, isModalOpen, largeImageURL, tags, currentPage, totalPages } = this.state;
 
     return (
       <div className={css.app}>
-        <Searchbar onSubmit={getSearchString} />
+        <Searchbar onSubmit={this.getSearchString} />
 
-        {isLoading && requestParameters.page === 1 ? (
+        {isLoading && currentPage === 1 ? (
           <Loader />
         ) : (
           gallery.length > 0 && (
-            <ImageGallery gallery={gallery} onClick={openModal} />
+            <>
+              <ImageGallery gallery={gallery} onClick={this.openModal} />
+
+              {currentPage < totalPages && (
+                <Button onClick={this.loadNextPage}>Load More</Button>
+              )}
+
+              {isLoading && currentPage !== 1 && <Loader />}
+            </>
           )
         )}
 
-        {requestParameters.page !== 1 &&
-          (isLoading ? <Loader /> : <Button onClick={loadNextPage} />)}
-
         {isModalOpen && (
-          <Modal onClose={closeModal}>
+          <Modal onClose={this.closeModal}>
             <Image URL={largeImageURL} tags={tags} />
           </Modal>
         )}
