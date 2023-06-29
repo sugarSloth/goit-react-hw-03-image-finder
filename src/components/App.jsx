@@ -23,20 +23,17 @@ class App extends Component {
     const searchString = this.state.searchString;
     const { currentPage } = this.state;
 
-    if (prevState.searchString !== searchString || prevState.currentPage !== currentPage) {
+    if (
+      prevState.searchString !== searchString ||
+      prevState.currentPage !== currentPage
+    ) {
       this.setState({ isLoading: true });
       this.updateGallery(searchString, currentPage);
     }
   }
 
   loadNextPage = () => {
-    const nextPage = this.state.currentPage + 1;
-
-    if (nextPage <= this.state.totalPages) {
-      this.setState({ currentPage: nextPage }, () => {
-        this.updateGallery(this.state.searchString, nextPage);
-      });
-    }
+    this.setState(prevState => ({ currentPage: prevState.currentPage + 1 }));
   };
 
   updateGallery = async (searchString, page) => {
@@ -48,7 +45,7 @@ class App extends Component {
         return;
       }
 
-      this.setState((prevState) => ({
+      this.setState(prevState => ({
         gallery: [...prevState.gallery, ...response.hits],
         totalPages: Math.ceil(response.totalHits / response.hitsPerPage),
       }));
@@ -59,17 +56,13 @@ class App extends Component {
     }
   };
 
-  getSearchString = (value) => {
+  getSearchString = value => {
     if (this.state.searchString !== value.searchString) {
-      this.setState(
-        {
-          searchString: value.searchString,
-          gallery: [],
-        },
-        () => {
-          this.updateGallery(value.searchString, 1);
-        }
-      );
+      this.setState({
+        searchString: value.searchString,
+        gallery: [],
+        page: 1,
+      });
     } else {
       alert(`You are actually looking at "${value.searchString}" pictures`);
     }
@@ -84,7 +77,15 @@ class App extends Component {
   };
 
   render() {
-    const { gallery, isLoading, isModalOpen, largeImageURL, tags, currentPage, totalPages } = this.state;
+    const {
+      gallery,
+      isLoading,
+      isModalOpen,
+      largeImageURL,
+      tags,
+      currentPage,
+      totalPages,
+    } = this.state;
 
     return (
       <div className={css.app}>
@@ -100,8 +101,6 @@ class App extends Component {
               {currentPage < totalPages && (
                 <Button onClick={this.loadNextPage}>Load More</Button>
               )}
-
-              {isLoading && currentPage !== 1 && <Loader />}
             </>
           )
         )}
