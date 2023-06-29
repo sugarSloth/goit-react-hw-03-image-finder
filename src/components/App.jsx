@@ -88,30 +88,29 @@ class App extends Component {
     } = this.state;
 
     return (
-      <div className={css.app}>
-        <Searchbar onSubmit={this.getSearchString} />
+  <div className={css.app}>
+    <Searchbar onSubmit={this.getSearchString} />
 
-        {isLoading && currentPage === 1 ? (
-          <Loader />
-        ) : (
-          gallery.length > 0 && (
-            <>
-              <ImageGallery gallery={gallery} onClick={this.openModal} />
+    {isLoading && <Loader />}
 
-              {currentPage < totalPages && (
-                <Button onClick={this.loadNextPage}>Load More</Button>
-              )}
-            </>
-          )
+    {gallery.length > 0 && (
+      <>
+        <ImageGallery gallery={gallery} onClick={this.openModal} />
+
+        {currentPage < totalPages && (
+          <Button onClick={this.loadNextPage}>Load More</Button>
         )}
+      </>
+    )}
 
-        {isModalOpen && (
-          <Modal onClose={this.closeModal}>
-            <Image URL={largeImageURL} tags={tags} />
-          </Modal>
-        )}
-      </div>
-    );
+    {isModalOpen && (
+      <Modal onClose={this.closeModal}>
+        <Image URL={largeImageURL} tags={tags} />
+      </Modal>
+    )}
+  </div>
+);
+
   }
 }
 
